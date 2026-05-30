@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>미니 당근마켓</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:   #FF6F0F;
+      --orange-lt:#FFF0E6;
+      --gray-50:  #F9F9F9;
+      --gray-100: #F2F2F2;
+      --gray-200: #E4E4E4;
+      --gray-400: #ABABAB;
+      --gray-600: #6B6B6B;
+      --gray-900: #1A1A1A;
+      --white:    #FFFFFF;
+      --radius:   10px;
+      --shadow:   0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+      min-height: 100vh;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      height: 56px;
+      display: flex;
+      align-items: center;
+    }
+    .logo { font-size: 20px; font-weight: 700; color: var(--orange); letter-spacing: -0.5px; }
+
+    /* ── 탭 ── */
+    nav { background: var(--white); border-bottom: 1px solid var(--gray-200); }
+    .tab-list { max-width: 960px; margin: 0 auto; display: flex; padding: 0 24px; gap: 4px; }
+    .tab-btn {
+      padding: 14px 18px; border: none; background: none;
+      font-size: 15px; font-weight: 500; color: var(--gray-400);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover  { color: var(--gray-900); }
+    .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+    /* ── 메인 ── */
+    main { max-width: 960px; margin: 0 auto; padding: 28px 24px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 필터 바 ── */
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .filter-bar select,
+    .filter-bar input[type="number"],
+    .filter-bar input[type="text"] {
+      height: 38px; padding: 0 12px;
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+      font-size: 14px; background: var(--white); color: var(--gray-900);
+      outline: none; transition: border-color .15s;
+    }
+    .filter-bar select:focus,
+    .filter-bar input:focus { border-color: var(--orange); }
+    .filter-bar input[type="number"] { width: 110px; }
+    .filter-bar input[type="text"]   { width: 160px; }
+    .filter-check {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--gray-600); cursor: pointer;
+      padding: 0 4px;
+    }
+    .filter-check input { accent-color: var(--orange); width: 15px; height: 15px; cursor: pointer; }
+
+    /* ── 버튼 ── */
+    .btn {
+      height: 38px; padding: 0 18px; border: none; border-radius: var(--radius);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--orange); color: var(--white); }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
+    .btn-outline { background: var(--white); color: var(--orange); border: 1.5px solid var(--orange); }
+    .btn-outline:hover:not(:disabled) { background: var(--orange-lt); }
+    .btn-sm { height: 30px; padding: 0 12px; font-size: 13px; }
+
+    /* ── 카드 그리드 ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .product-card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 18px;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: box-shadow .15s;
+    }
+    .product-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .product-card.is-sold { opacity: .6; }
+    .card-category {
+      font-size: 12px; color: var(--orange); font-weight: 600;
+      background: var(--orange-lt); padding: 2px 8px;
+      border-radius: 20px; width: fit-content;
+    }
+    .card-title { font-size: 16px; font-weight: 600; line-height: 1.4; }
+    .card-price { font-size: 18px; font-weight: 700; }
+    .card-meta {
+      font-size: 13px; color: var(--gray-400);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .badge-sold {
+      font-size: 12px; font-weight: 600;
+      background: var(--gray-200); color: var(--gray-600);
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .card-actions { margin-top: 4px; }
+
+    /* ── 폼 ── */
+    .form-card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 28px; max-width: 480px;
+    }
+    .form-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 14px; font-weight: 500; color: var(--gray-600); }
+    .form-group select,
+    .form-group input {
+      height: 42px; padding: 0 14px;
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+      font-size: 15px; outline: none; transition: border-color .15s;
+    }
+    .form-group select:focus,
+    .form-group input:focus { border-color: var(--orange); }
+    .form-submit { width: 100%; height: 46px; font-size: 16px; margin-top: 8px; }
+
+    /* ── 테이블 ── */
+    .table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead th {
+      background: var(--gray-50); padding: 12px 16px; text-align: left;
+      font-size: 12px; font-weight: 600; color: var(--gray-600);
+      letter-spacing: .4px; text-transform: uppercase;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    tbody td { padding: 14px 16px; border-bottom: 1px solid var(--gray-100); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--gray-50); }
+
+    /* ── 통계 서브탭 ── */
+    .sub-tab-list { display: flex; gap: 8px; margin-bottom: 20px; }
+    .sub-tab-btn {
+      padding: 8px 16px; border: 1.5px solid var(--gray-200); border-radius: 20px;
+      background: var(--white); font-size: 13px; font-weight: 500;
+      color: var(--gray-600); cursor: pointer; transition: all .15s;
+    }
+    .sub-tab-btn.active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+
+    /* ── 모달 ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--white); border-radius: 14px; padding: 28px; width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .modal-subtitle { font-size: 14px; color: var(--gray-600); margin-bottom: 18px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; }
+    .modal-warn { font-size: 13px; color: #D94F4F; margin-top: 6px; min-height: 18px; }
+
+    /* ── 토스트 ── */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--gray-900); color: var(--white);
+      padding: 12px 24px; border-radius: 24px;
+      font-size: 14px; font-weight: 500;
+      opacity: 0; transition: opacity .2s, transform .2s;
+      z-index: 300; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: #D94F4F; }
+
+    /* ── 빈 상태 ── */
+    .empty { text-align: center; padding: 60px 0; color: var(--gray-400); font-size: 15px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 17px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="logo">🥕 미니 당근마켓</span>
+  </div>
+</header>
+
+<nav>
+  <div class="tab-list">
+    <button class="tab-btn active" data-tab="products">상품 목록</button>
+    <button class="tab-btn"        data-tab="register">상품 등록</button>
+    <button class="tab-btn"        data-tab="transactions">거래 내역</button>
+    <button class="tab-btn"        data-tab="stats">통계</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- 탭 1: 상품 목록 -->
+  <div class="tab-panel active" id="tab-products">
+    <div class="filter-bar">
+      <select id="filter-category">
+        <option value="">전체 카테고리</option>
+      </select>
+      <input type="number" id="filter-min" placeholder="최소 가격">
+      <input type="number" id="filter-max" placeholder="최대 가격">
+      <input type="text"   id="filter-keyword" placeholder="제목 검색">
+      <label class="filter-check">
+        <input type="checkbox" id="show-sold" onchange="loadProducts()">
+        판매 완료 포함
+      </label>
+      <button class="btn btn-primary" onclick="loadProducts()">검색</button>
+      <button class="btn btn-outline" onclick="resetFilters()">초기화</button>
+    </div>
+    <div id="product-list" class="card-grid"></div>
+  </div>
+
+  <!-- 탭 2: 상품 등록 -->
+  <div class="tab-panel" id="tab-register">
+    <div class="form-card">
+      <div class="form-title">상품 등록</div>
+      <div class="form-group">
+        <label>판매자</label>
+        <select id="reg-seller"></select>
+      </div>
+      <div class="form-group">
+        <label>카테고리</label>
+        <select id="reg-category"></select>
+      </div>
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" id="reg-title" placeholder="상품명을 입력하세요">
+      </div>
+      <div class="form-group">
+        <label>가격</label>
+        <input type="number" id="reg-price" placeholder="0" min="0">
+      </div>
+      <button class="btn btn-primary form-submit" id="reg-btn" onclick="registerProduct()">등록하기</button>
+    </div>
+  </div>
+
+  <!-- 탭 3: 거래 내역 -->
+  <div class="tab-panel" id="tab-transactions">
+    <div class="section-header">
+      <span class="section-title">거래 내역</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>상품명</th><th>판매자</th>
+            <th>구매자</th><th>거래 가격</th><th>거래일</th>
+          </tr>
+        </thead>
+        <tbody id="transaction-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 탭 4: 통계 -->
+  <div class="tab-panel" id="tab-stats">
+    <div class="sub-tab-list">
+      <button class="sub-tab-btn active" data-subtab="cat">카테고리별</button>
+      <button class="sub-tab-btn"        data-subtab="seller">판매자별</button>
+      <button class="sub-tab-btn"        data-subtab="expensive">평균 초과 상품</button>
+    </div>
+    <div id="stats-content"></div>
+  </div>
+
+</main>
+
+<!-- 구매 모달 -->
+<div class="modal-backdrop" id="purchase-modal">
+  <div class="modal">
+    <div class="modal-title">구매하기</div>
+    <div class="modal-subtitle" id="modal-product-title"></div>
+    <div class="form-group">
+      <label>구매자 선택</label>
+      <select id="modal-buyer"></select>
+    </div>
+    <div class="modal-warn" id="modal-warn"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" id="confirm-btn" onclick="confirmPurchase()">구매 확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8000';
+  let selectedProductId  = null;
+  let selectedSellerId   = null;   // 본인 구매 방지용
+
+  // ── 유틸 ──────────────────────────────────────────────────
+
+  const fmt     = price => Number(price).toLocaleString('ko-KR') + '원';
+  const fmtDate = dt    => new Date(dt).toLocaleDateString('ko-KR');
+
+  function toast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2500);
+  }
+
+  async function api(method, path, body = null) {
+    const res = await fetch(API + path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : null,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '오류가 발생했습니다');
+    return data;
+  }
+
+  function setLoading(btnId, loading, defaultText) {
+    const btn = document.getElementById(btnId);
+    btn.disabled    = loading;
+    btn.textContent = loading ? '처리 중...' : defaultText;
+  }
+
+  // ── 탭 전환 ───────────────────────────────────────────────
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'transactions') loadTransactions();
+      if (btn.dataset.tab === 'stats')        loadStats('cat');
+    });
+  });
+
+  // ── 통계 서브탭 ───────────────────────────────────────────
+
+  document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadStats(btn.dataset.subtab);
+    });
+  });
+
+  // ── 초기 로드 ─────────────────────────────────────────────
+
+  async function init() {
+    try {
+      const [cats, users] = await Promise.all([
+        api('GET', '/categories'),
+        api('GET', '/users'),
+      ]);
+
+      const filterSel  = document.getElementById('filter-category');
+      const regCatSel  = document.getElementById('reg-category');
+      const regSellerSel = document.getElementById('reg-seller');
+      const modalBuyer = document.getElementById('modal-buyer');
+
+      cats.forEach(c => {
+        filterSel.innerHTML  += `<option value="${c.name}">${c.name}</option>`;
+        regCatSel.innerHTML  += `<option value="${c.id}">${c.name}</option>`;
+      });
+      users.forEach(u => {
+        regSellerSel.innerHTML += `<option value="${u.id}">${u.nickname}</option>`;
+        modalBuyer.innerHTML   += `<option value="${u.id}" data-id="${u.id}">${u.nickname}</option>`;
+      });
+
+      // 모달 buyer 변경 시 본인 여부 실시간 체크
+      modalBuyer.addEventListener('change', checkSelfPurchase);
+
+      await loadProducts();
+    } catch (e) {
+      toast('서버에 연결할 수 없습니다. 서버를 먼저 실행해주세요.', true);
+    }
+  }
+
+  // ── 탭 1: 상품 목록 ──────────────────────────────────────
+
+  async function loadProducts() {
+    const params   = new URLSearchParams();
+    const cat      = document.getElementById('filter-category').value;
+    const min      = document.getElementById('filter-min').value;
+    const max      = document.getElementById('filter-max').value;
+    const keyword  = document.getElementById('filter-keyword').value;
+    const showSold = document.getElementById('show-sold').checked;
+
+    if (cat)     params.set('category',  cat);
+    if (min)     params.set('min_price', min);
+    if (max)     params.set('max_price', max);
+    if (keyword) params.set('keyword',   keyword);
+    params.set('status', showSold ? 'all' : 'available');
+
+    const list = document.getElementById('product-list');
+    try {
+      const products = await api('GET', '/products?' + params.toString());
+      if (!products.length) {
+        list.innerHTML = '<div class="empty">검색 결과가 없습니다</div>';
+        return;
+      }
+      list.innerHTML = products.map(p => {
+        const isSold = p.status === 'sold';
+        // data 속성으로 분리 — 제목에 따옴표 있어도 안전
+        return `
+          <div class="product-card${isSold ? ' is-sold' : ''}">
+            <span class="card-category">${p.category}</span>
+            <div class="card-title">${p.title}</div>
+            <div class="card-price">${fmt(p.price)}</div>
+            <div class="card-meta">
+              <span>${p.seller}</span>
+              <span>${fmtDate(p.created_at)}</span>
+            </div>
+            <div class="card-actions">
+              ${isSold
+                ? '<span class="badge-sold">판매 완료</span>'
+                : `<button class="btn btn-primary btn-sm"
+                     data-id="${p.id}"
+                     data-title="${p.title.replace(/"/g, '&quot;')}"
+                     data-seller="${p.seller_id ?? ''}"
+                     onclick="openModal(this)">구매하기</button>`
+              }
+            </div>
+          </div>`;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="empty">상품을 불러올 수 없습니다</div>';
+    }
+  }
+
+  function resetFilters() {
+    document.getElementById('filter-category').value = '';
+    document.getElementById('filter-min').value      = '';
+    document.getElementById('filter-max').value      = '';
+    document.getElementById('filter-keyword').value  = '';
+    document.getElementById('show-sold').checked     = false;
+    loadProducts();
+  }
+
+  // ── 탭 2: 상품 등록 ──────────────────────────────────────
+
+  async function registerProduct() {
+    const title = document.getElementById('reg-title').value.trim();
+    const price = Number(document.getElementById('reg-price').value);
+
+    if (!title)    { toast('제목을 입력해주세요', true); return; }
+    if (price < 0) { toast('가격을 확인해주세요', true); return; }
+
+    const body = {
+      seller_id:   Number(document.getElementById('reg-seller').value),
+      category_id: Number(document.getElementById('reg-category').value),
+      title,
+      price,
+    };
+
+    setLoading('reg-btn', true, '등록하기');
+    try {
+      await api('POST', '/products', body);
+      toast('상품이 등록되었습니다!');
+      document.getElementById('reg-title').value = '';
+      document.getElementById('reg-price').value = '';
+      // 등록 후 상품 목록 탭으로 자동 이동
+      document.querySelector('[data-tab="products"]').click();
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      setLoading('reg-btn', false, '등록하기');
+    }
+  }
+
+  // ── 탭 3: 거래 내역 ──────────────────────────────────────
+
+  async function loadTransactions() {
+    const tbody = document.getElementById('transaction-list');
+    try {
+      const list = await api('GET', '/transactions');
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">거래 내역이 없습니다</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(t => `
+        <tr>
+          <td>${t.transaction_id}</td>
+          <td>${t.title}</td>
+          <td>${t.seller}</td>
+          <td>${t.buyer}</td>
+          <td><strong>${fmt(t.price)}</strong></td>
+          <td>${fmtDate(t.created_at)}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">데이터를 불러올 수 없습니다</td></tr>';
+    }
+  }
+
+  // ── 탭 4: 통계 ───────────────────────────────────────────
+
+  async function loadStats(subtab) {
+    const el = document.getElementById('stats-content');
+    el.innerHTML = '';
+    try {
+      if (subtab === 'cat') {
+        const data = await api('GET', '/stats/categories');
+        el.innerHTML = `<div class="table-wrap"><table>
+          <thead><tr><th>카테고리</th><th>상품 수</th><th>평균가</th><th>최저가</th><th>최고가</th></tr></thead>
+          <tbody>${data.map(r => `<tr>
+            <td>${r.category}</td><td>${r.total_count}개</td>
+            <td>${fmt(r.avg_price)}</td><td>${fmt(r.min_price)}</td><td>${fmt(r.max_price)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+
+      } else if (subtab === 'seller') {
+        const data = await api('GET', '/stats/sellers');
+        el.innerHTML = `<div class="table-wrap"><table>
+          <thead><tr><th>판매자</th><th>총 등록</th><th>판매 완료</th><th>판매 중</th></tr></thead>
+          <tbody>${data.map(r => `<tr>
+            <td><strong>${r.seller}</strong></td><td>${r.total_listed}개</td>
+            <td>${r.sold_count}개</td><td>${r.available_count}개</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+
+      } else if (subtab === 'expensive') {
+        const data = await api('GET', '/stats/expensive');
+        el.innerHTML = `<div class="table-wrap"><table>
+          <thead><tr><th>상품명</th><th>카테고리</th><th>판매자</th><th>가격</th><th>카테고리 평균</th><th>차액</th></tr></thead>
+          <tbody>${data.map(r => `<tr>
+            <td>${r.title}</td><td>${r.category}</td><td>${r.seller}</td>
+            <td><strong>${fmt(r.price)}</strong></td><td>${fmt(r.category_avg)}</td>
+            <td style="color:var(--orange);font-weight:600">+${fmt(r.diff_from_avg)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+      }
+    } catch (e) {
+      el.innerHTML = '<div class="empty">데이터를 불러올 수 없습니다</div>';
+    }
+  }
+
+  // ── 구매 모달 ─────────────────────────────────────────────
+
+  function openModal(btn) {
+    selectedProductId = Number(btn.dataset.id);
+    selectedSellerId  = Number(btn.dataset.seller) || null;
+    document.getElementById('modal-product-title').textContent = btn.dataset.title;
+    document.getElementById('modal-warn').textContent = '';
+    document.getElementById('purchase-modal').classList.add('open');
+    checkSelfPurchase();
+  }
+
+  function closeModal() {
+    selectedProductId = null;
+    selectedSellerId  = null;
+    document.getElementById('purchase-modal').classList.remove('open');
+  }
+
+  function checkSelfPurchase() {
+    const buyerId  = Number(document.getElementById('modal-buyer').value);
+    const warnEl   = document.getElementById('modal-warn');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const isSelf   = selectedSellerId && buyerId === selectedSellerId;
+    warnEl.textContent  = isSelf ? '본인 상품은 구매할 수 없습니다' : '';
+    confirmBtn.disabled = isSelf;
+  }
+
+  async function confirmPurchase() {
+    const buyerId = Number(document.getElementById('modal-buyer').value);
+    setLoading('confirm-btn', true, '구매 확인');
+    try {
+      await api('POST', `/products/${selectedProductId}/purchase`, { buyer_id: buyerId });
+      toast('구매가 완료되었습니다!');
+      closeModal();
+      loadProducts();
+    } catch (e) {
+      toast(e.message, true);
+      closeModal();
+    }
+    // setLoading 복구는 closeModal 후 버튼이 재렌더링되므로 생략
+  }
+
+  // 모달 바깥 클릭 시 닫기
+  document.getElementById('purchase-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── 시작 ─────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>
